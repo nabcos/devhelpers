@@ -33,7 +33,7 @@ update() {
 
     revlist=`git rev-list $repo/$branch`
 
-    old=`echo -e "$revlist" | head -n 1`
+    old=`/bin/echo -e "$revlist" | head -n 1`
 
     [ -z "$offline" ] && \
 	( git remote update $repo || (echo "could not update $repo" >&2; exit 1) ) && \

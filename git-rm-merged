@@ -1,0 +1,24 @@
+#!/bin/sh
+
+. devhelper-common
+
+git checkout master || echo "need to be on local master" >&2
+git remote update $REMOTE
+
+git branch --merged $REMOTE/master | grep -v master >"$tmp"
+
+while read branch
+do
+    # compare heads of local and remote branch
+    local=`git rev-list --max-count=1 $branch`
+    remote=`git rev-list --max-count=1 $REMOTE/$branch 2>/dev/null || echo ""` # remote does not exist -> empty hash
+
+    if [ -z "$remote" ] || [ "$local" = "$remote" ]
+    then
+	echo -n "Removing branch $branch..."
+	git branch -d $branch >/dev/null && ( [ -z "$remote" ] || git push $REMOTE :$branch >/dev/null )
+	echo "done"
+    else
+	echo >&2 "Local branch $branch is different from $REMOTE, will not remove"
+    fi
+done <"$tmp"

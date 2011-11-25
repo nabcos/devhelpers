@@ -1,0 +1,25 @@
+set -e
+
+REMOTE=upstream
+
+cleanup() {
+    rm -f "$tmp"
+}
+
+remote() {
+    if echo "$repos" | grep "$REMOTE" -q
+    then
+	repo="$REMOTE"
+    elif echo "$repos" | grep "origin" -q
+    then
+	repo="origin"
+    else
+	echo >&2 "unknown or empty remotes: '$repos'"
+	exit 1
+    fi
+
+    echo "$repo"
+}
+
+trap cleanup EXIT INT
+tmp=`mktemp`

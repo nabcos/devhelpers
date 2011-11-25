@@ -1,0 +1,78 @@
+#!/bin/sh
+
+. `dirname $0`/devhelper-common
+
+TEMP=`getopt -o oa --long offline,all \
+         -n 'upstream' -- "$@"`
+
+if [ $? != 0 ] ; then echo "Error while parsing options" >&2 ; exit 1 ; fi
+
+eval set -- "$TEMP"
+
+while true 
+do
+    case "$1" in
+    -a|--all) all=true ; shift ;;
+    -o|--offline) offline=true ; shift ;;
+    --) shift ; break ;;
+    *) echo "Internal error!" ; exit 1 ;;
+    esac
+done
+
+update() {
+    repos=`git remote 2>/dev/null|| echo skip ` # if git remote fails, this is not a git repo
+    if [ "$repos" = skip ] 
+    then
+	echo >&2 "Not a git repo, 'git remote' failed"
+	return
+    fi
+
+    repo=`remote`
+
+    branch=`git branch | egrep "^\*" | sed -e "s/^\* //"`
+
+    revlist=`git rev-list $repo/$branch`
+
+    old=`echo -e "$revlist" | head -n 1`
+
+    [ -z "$offline" ] && \
+	( git remote update $repo || (echo "could not update $repo" >&2; exit 1) ) && \
+	( git remote prune $repo || (echo "could not prune $repo" >&2; exit 1) )
+	
+    new=`git rev-list $repo/$branch | head -n 1`
+
+    ( ( [ -z "$old" ] || git log --oneline $old..$new ) && git rebase $repo/$branch ) || echo >&2 "could not log/rebase"
+}
+
+updateAll() {
+    for arg in "$@"
+    do
+    	if [ -e "$arg" ] 
+    	then
+            (
+            echo "=> $arg"
+            cd $arg || continue
+            update
+            )
+    	else
+            echo "Directory not found: $arg"
+    	fi
+    done
+}
+
+if [ $# != 0 ]
+then
+    updateAll "$@"
+elif [ ! -z "$all" ]
+then
+    ls >"$tmp"
+    while read line
+    do
+        [ "$line" = . ] || [ "$line" = .. ] || args="$args'$line' "
+    done <"$tmp"
+
+    eval set -- $args
+    updateAll "$@"
+else
+    update
+fi

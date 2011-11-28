@@ -31,9 +31,10 @@ update() {
 
     branch=`git branch | egrep "^\*" | sed -e "s/^\* //"`
 
-    revlist=`git rev-list $repo/$branch`
+    # check if remote branch exists
+    git log -0 "$repo/$branch"
 
-    old=`/bin/echo -e "$revlist" | head -n 1`
+    old=`git rev-list $repo/$branch | head -n 1`
 
     [ -z "$offline" ] && \
 	( git remote update $repo || (echo "could not update $repo" >&2; exit 1) ) && \

@@ -2,10 +2,16 @@
 
 job=$1
 number=$2
+if [ -z "$number" ] 
+then
+    # assume $1 is already '$job/$nr'
+    dir="$job"
+else
+    dir="$job/$number"
+fi
 
 basedir="$HOME/sonatype/ci/it-logs"
 
-dir="$job/$number"
 
 for jdk in java-6x # java-5x
 do

@@ -2,10 +2,7 @@
 
 . devhelper-common
 
-
-branch_name=$(git symbolic-ref -q HEAD)
-branch_name=${branch_name##refs/heads/}
-branch_name=${branch_name:-HEAD}
+branch_name=`current_branch`
 
 git branch -a --merged $REMOTE/$branch_name | grep -v "* $branch_name" | grep -v "remotes/$REMOTE/$branch_name" >"$tmp"
 

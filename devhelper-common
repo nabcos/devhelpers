@@ -21,5 +21,9 @@ remote() {
     echo "$repo"
 }
 
+current_branch() {
+    git name-rev --name-only HEAD
+}
+
 trap cleanup EXIT INT
 tmp=`mktemp`

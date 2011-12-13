@@ -4,11 +4,7 @@
 
 git remote update $REMOTE
 
-#git branch --merged $REMOTE/master | grep -v master >"$tmp"
-
-branch_name=$(git symbolic-ref -q HEAD)
-branch_name=${branch_name##refs/heads/}
-branch_name=${branch_name:-HEAD}
+branch_name=`current_branch`
 
 git branch --merged $REMOTE/$branch_name | grep -v "* $branch_name" >"$tmp"
 

@@ -2,10 +2,15 @@
 
 . devhelper-common
 
-git checkout master || echo "need to be on local master" >&2
 git remote update $REMOTE
 
-git branch --merged $REMOTE/master | grep -v master >"$tmp"
+#git branch --merged $REMOTE/master | grep -v master >"$tmp"
+
+branch_name=$(git symbolic-ref -q HEAD)
+branch_name=${branch_name##refs/heads/}
+branch_name=${branch_name:-HEAD}
+
+git branch --merged $REMOTE/$branch_name | grep -v "* $branch_name" >"$tmp"
 
 while read branch
 do

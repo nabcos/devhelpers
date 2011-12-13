@@ -2,10 +2,20 @@
 
 . devhelper-common
 
-git branch -a --merged $REMOTE/master | grep -v master >"$tmp"
 
-( echo "AUTHOR	BRANCH	LAST COMMIT"
-while read branch
-do
-    git l -1 --format="%an	`echo $branch | sed -e 's@remotes/@@'`	%ar" "$branch" | head -n 1
-done <"$tmp" | sort ) | column -t -s '	'
+branch_name=$(git symbolic-ref -q HEAD)
+branch_name=${branch_name##refs/heads/}
+branch_name=${branch_name:-HEAD}
+
+git branch -a --merged $REMOTE/$branch_name | grep -v "* $branch_name" | grep -v "remotes/$REMOTE/$branch_name" >"$tmp"
+
+if [ "$1" = "--plain" ]
+then
+    sed -e "s@remotes/$REMOTE/@@" "$tmp"
+else
+    ( echo "AUTHOR	BRANCH	LAST COMMIT"
+    while read branch
+    do
+	git l -1 --format="%an	`echo $branch | sed -e 's@remotes/@@'`	%ar" "$branch" | head -n 1
+    done <"$tmp" | sort ) | column -t -s '	'
+fi

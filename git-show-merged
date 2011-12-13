@@ -4,7 +4,7 @@
 
 branch_name=`current_branch`
 
-git branch -a --merged $REMOTE/$branch_name | grep -v "* $branch_name" | grep -v "remotes/$REMOTE/$branch_name" >"$tmp"
+git branch -a --merged $REMOTE/$branch_name | grep -v "* $branch_name" | grep -v "$REMOTE/$branch_name" >"$tmp"
 
 if [ "$1" = "--plain" ]
 then

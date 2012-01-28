@@ -1,6 +1,9 @@
 set -e
 
-REMOTE=vendor
+REMOTE=upstream
+NEXUS=http://localhost:8081/nexus
+
+test -r $HOME/.devhelper && . $HOME/.devhelper
 
 cleanup() {
     rm -f "$tmp"

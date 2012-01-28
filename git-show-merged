@@ -13,6 +13,6 @@ else
     ( echo "AUTHOR	BRANCH	LAST COMMIT"
     while read branch
     do
-	git l -1 --format="%an	`echo $branch | sed -e 's@remotes/@@'`	%ar" "$branch" | head -n 1
+	git log -1 --format="%an	`echo $branch | sed -e 's@remotes/@@'`	%ar" "$branch" | head -n 1
     done <"$tmp" | sort ) | column -t -s '	'
 fi

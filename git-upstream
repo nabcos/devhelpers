@@ -42,7 +42,7 @@ update() {
 	
     new=`git rev-list $repo/$branch | head -n 1`
 
-    ( ( [ -z "$old" ] || git log --oneline $old..$new ) && git rebase $repo/$branch ) || echo >&2 "could not log/rebase"
+    ( ( [ -z "$old" ] || git log --graph --decorate --oneline $old..$new ) && git rebase $repo/$branch ) || echo >&2 "could not log/rebase"
 }
 
 updateAll() {

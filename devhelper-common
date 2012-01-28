@@ -1,6 +1,6 @@
 set -e
 
-REMOTE=upstream
+REMOTE=vendor
 
 cleanup() {
     rm -f "$tmp"
@@ -26,4 +26,4 @@ current_branch() {
 }
 
 trap cleanup EXIT INT
-tmp=`mktemp`
+tmp=`mktemp -t devhelper`

@@ -25,7 +25,7 @@ do
 	mkdir -p "$basedir/$dir/$tag" && \
 	    curl -s -S -f -n "$baseurl/consoleText" \
 		 -o "$tagdir/console.txt" && \
-	    curl -s -S -f -n "$baseurl/artifact/nexus/nexus-test-harness/nexus-test-harness-its/target/*zip*/target.zip" \
+	    curl -s -S -f -n "$baseurl/artifact/*zip*/target.zip" \
 		 -o "$tagdir/target.zip" && unzip -q -o "$tagdir/target.zip" -d "$tagdir" && \
 	realpath "$tagdir"
     done

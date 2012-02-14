@@ -1,0 +1,18 @@
+#!/bin/sh
+
+. devhelper-common
+
+branch_name=`current_branch`
+
+git branch -a | grep -v "* $branch_name" | grep -v "$REMOTE/$branch_name" >"$tmp"
+
+if [ "$1" = "--plain" ]
+then
+    sed -e "s@remotes/$REMOTE/@@" "$tmp"
+else
+    ( echo "AUTHOR	BRANCH	LAST COMMIT"
+    while read branch
+    do
+	git log -1 --format="%an	`echo $branch | sed -e 's@remotes/@@'`	%ar" "$branch" | head -n 1
+    done <"$tmp" | sort ) | column -t -s '	'
+fi

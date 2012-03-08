@@ -4,6 +4,7 @@
 g=com.sonatype.nexus
 a=nexus-professional
 v=${1-LATEST}
+r=${REPO-public}
 if [[ ${v} == *:* ]]
 then
     v=`echo $v | sed -e "s/:/ /g"`
@@ -11,4 +12,4 @@ read g a v <<EOF
 $v
 EOF
 fi
-curl "$NEXUS/service/local/artifact/maven/redirect?r=public&g=$g&a=$a&c=bundle&e=tar.gz&v=$v" -L | tar xz
+curl "$NEXUS/service/local/artifact/maven/redirect?r=$r&g=$g&a=$a&c=bundle&e=tar.gz&v=$v" --netrc-optional -L | tar xz

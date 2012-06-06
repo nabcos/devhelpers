@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# nx-unpack - unzips newest versions of nexus bundles from a given local repository
+# Usage: nx-unpack [+[path]] [version]
+# If the first argument is '+', try to extrapolate the path to the local repository from the current git branch (e.g. /tmp/mvnrepo/master)
+# If it is '+suffix', use 'suffix' as branch identifier (e.g. /tmp/mvnrepo/suffix).
+# If the suffix starts with '/', use that as a full path to the repo (e.g. '+/tmp/repo' will search for nexus bundles in /tmp/repo)
+
+. `dirname $0`/devhelper-common
+
+ga[0]=org.sonatype.nexus:nexus-oss-webapp
+ga[1]=com.sonatype.nexus:nexus
+ga[2]=com.sonatype.nexus:nexus-professional
+
+localRepo=`local_repo "$@"`
+
+if [[ "$1" = "+*" ]]
+then
+    shift
+fi
+
+if [ ! -z "$1" ]
+then
+    version="$1"
+fi
+
+for i in `seq 0 2`
+do
+	gaDir="$localRepo/`echo ${ga[i]} | sed -e "s@[.:]@/@g"`"
+
+	if [ ! -d "$gaDir" ]
+	then
+	    continue
+	fi
+
+	if [ -z "$version" ]
+	then
+	    # try to find newest version
+	    bundlePath=`find $gaDir -name "*-bundle.zip" | sort -r | head -n 1`
+	else
+	    a=`echo $ga | cut -f 2 -d ':'`
+	    bundlePath="$gaDir/$version/$a-$version-bundle.zip"
+	fi
+
+	if [ -e "$bundlePath" ]
+	then
+	    unzip -o "$bundlePath"
+	fi
+done

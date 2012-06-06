@@ -28,5 +28,22 @@ current_branch() {
     git name-rev --name-only HEAD
 }
 
+local_repo() {
+    if [[ $1 = +* ]]
+    then
+    	if [ "$1" == "+" ]
+	then
+	    echo "/tmp/mvnrepo/`current_branch`"
+	elif [[ $1 = +/* ]]
+	then
+	    echo "${1:1}"
+	else
+	    echo "/tmp/mvnrepo/${1:1}"
+	fi
+    else
+	grep localRepository $HOME/.m2/settings.xml | sed -e "s@^.*<localRepository>\([^<]*\)</localRepository>.*@\1@" | head -n 1
+    fi
+}
+
 trap cleanup EXIT INT
 tmp=`mktemp -t devhelper.XXXXXXXXXX`

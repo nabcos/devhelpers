@@ -28,7 +28,7 @@ echo "Using local repository '$localRepo' to build."
   trap "exit 1" INT
   
   # ionice using class 'idle'
-  ionice -c 3 $EXEC $localRepoProp "$@" 2>&1 | tee -a $logDir/$tag
+  ionice -c 3 -- $MVN $localRepoProp "$@" 2>&1 | tee -a $logDir/$tag
   trap - INT
 
   if grep -q "mvn <goals> -rf" $logDir/$tag 

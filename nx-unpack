@@ -14,7 +14,7 @@ ga[2]=com.sonatype.nexus:nexus-professional
 
 localRepo=`local_repo "$@"`
 
-if [[ "$1" = "+*" ]]
+if [[ "$1" = +* ]]
 then
     shift
 fi
@@ -44,6 +44,12 @@ do
 
 	if [ -e "$bundlePath" ]
 	then
-	    unzip -o "$bundlePath"
+	    echo -n "Extracting `basename $bundlePath` ... "
+	    ( unzip -o "$bundlePath" >/dev/null && echo "done" ) || \
+		( 
+		    echo "Could not extract $bundlePath! Continue with other bundles? (y/n)"
+		    read answer
+		    [ "$answer" != "y" ] && exit 1
+		)
 	fi
 done

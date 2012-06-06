@@ -1,0 +1,47 @@
+#!/bin/bash
+
+. `dirname $0`/devhelper-common
+
+if [ -z "$MVN" ]
+then
+    MVN="$HOME/local/bin/mvn"
+fi
+
+localRepo=`local_repo "$@"`
+
+echo "Using local repository '$localRepo' to build."
+
+  tag=`date +%Y%m%d-%H%M%S`-`basename ${localRepo}`
+
+  if [ ! -z "$localRepo" ]
+  then
+      localRepoProp="-Dmaven.repo.local=$localRepo"
+  fi
+
+  logDir=/tmp/mvn/log/
+
+  mkdir -p $logDir
+
+  echo -e "mvn $localRepoProp $@ \n" >$logDir/$tag
+  env >>$logDir/$tag
+
+  trap "exit 1" INT
+  
+  # ionice using class 'idle'
+  ionice -c 3 $EXEC $localRepoProp "$@" 2>&1 | tee -a $logDir/$tag
+  trap - INT
+
+  if grep -q "mvn <goals> -rf" $logDir/$tag 
+  then
+	[ -e /usr/bin/notify-send ] && notify-send "Maven Build failed" "Maven Build failed for:\n`basename ${localRepo}.`"
+	exit 1
+  fi
+  if grep -q "BUILD FAILURE" $logDir/$tag 
+  then
+	[ -e /usr/bin/notify-send ] && notify-send "Maven Build failed" "Maven Build failed for:\n`basename ${localRepo}.`"
+	exit 1
+  fi
+
+  gzip $logDir/$tag
+
+  [ -e /usr/bin/notify-send ] && notify-send "Maven Build succeeded" "Maven Build succeeded for:\n`basename ${localRepo}.`"

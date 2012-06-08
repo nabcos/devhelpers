@@ -9,6 +9,11 @@ fi
 
 localRepo=`local_repo "$@"`
 
+if [[ $1 == +* ]]
+then
+    shift
+fi
+
 echo "Using local repository '$localRepo' to build."
 
   tag=`date +%Y%m%d-%H%M%S`-`basename ${localRepo}`

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+# set -x
 
 # nx-unpack - unzips newest versions of nexus bundles from a given local repository
 # Usage: nx-unpack [+[path]] [version]
@@ -133,10 +134,10 @@ do
 	if [ -e "$bundlePath" ]
 	then
 	    dir=$(toDir `echo ${ga[i]} | sed -e "s/:/ /g"` "$version" "$plusMod")
-	    dir=`realpath $dir`
 	    echo -n "Extracting `basename $bundlePath` ... "
 	    ( unzip -o "$bundlePath" -d "$dir" >/dev/null && \
 		# this should only be one directory, GAV
+		dir=`realpath $dir`
 		tweak $dir/nexus*
 	    ) || \
 	    ( 

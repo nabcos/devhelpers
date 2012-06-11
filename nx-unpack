@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # nx-unpack - unzips newest versions of nexus bundles from a given local repository
 # Usage: nx-unpack [+[path]] [version]
 # If the first argument is '+', try to extrapolate the path to the local repository from the current git branch (e.g. /tmp/mvnrepo/master)
@@ -16,6 +18,7 @@ localRepo=`local_repo "$@"`
 
 if [[ "$1" = +* ]]
 then
+    plusMod="$1"
     shift
 fi
 
@@ -23,6 +26,85 @@ if [ ! -z "$1" ]
 then
     version="$1"
 fi
+
+patchWebXml() {
+cd "$1"
+
+cat <<EOF | patch -p0 
++++ nexus/WEB-INF/web.xml.orig	2011-06-17 09:50:19.077758022 +0200
++++ nexus/WEB-INF/web.xml	2011-06-17 09:50:33.077758022 +0200
+@@ -146,6 +146,7 @@
+     Uncomment this if you need to edit JavaScript files and other
+     resources while Jetty is running (to prevent it from locking
+     everything). 
++  -->
+     <servlet>
+       <servlet-name>default</servlet-name>
+       <servlet-class>org.mortbay.jetty.servlet.DefaultServlet</servlet-class>
+@@ -154,5 +155,4 @@
+         <param-value>false</param-value>
+       </init-param>
+     </servlet>
+-  -->
+ </web-app>
+EOF
+sed -i -e "s@org.mortbay.jetty.servlet.DefaultServlet@org.eclipse.jetty.servlet.DefaultServlet@" "nexus/WEB-INF/web.xml"
+}
+
+beautifyJs() {
+    installDir="$1"
+    jsPath=$installDir/nexus/js/sonatype-all.js
+    [ -x "`which jsbeautifier.py`" ] && jsbeautifier.py $jsPath >$jsPath.formatted
+    mv $jsPath.formatted $jsPath 
+}
+
+enableJavaDebugging() {
+sed -i -e "s/#wrapper.java.additional/wrapper.java.additional/" -e "s/suspend=y,address=8000/suspend=n,address=8001/" "$1/bin/jsw/conf/wrapper.conf"
+}
+
+logLevel() {
+    level="$1"
+    installDir="$2"
+
+    loggingJar="`find $2 -name "nexus-logging-extras-*jar" -print0 | xargs -0 realpath`"
+
+    mkdir -p "$installDir/../sonatype-work/nexus/conf"
+    cd "$installDir/../sonatype-work/nexus/conf"
+    jar xf "$loggingJar" META-INF/log/logback.properties
+    mv META-INF/log/logback.properties .
+    rmdir META-INF/log
+    rmdir META-INF
+    sed -i -e "s/root.level=.*/root.level=$level/" logback.properties
+}
+
+tweak() {
+    ( beautifyJs "$@" )
+    ( patchWebXml "$@" ) 
+    ( enableJavaDebugging "$@" ) 
+    ( logLevel DEBUG "$@" ) 
+}
+
+plusDirName() {
+    if [ ! -z "$1" ]
+    then
+	if [ -z "${1:1}" ]
+	then
+	    # empty modifier, use git branch name
+	    echo "-`basename $localRepo`"
+	else
+	    echo "-${1:1}"
+	fi
+    fi
+}
+
+toDir() {
+    g=$1
+    a=$2
+    v=$3
+    plus=$4
+
+    echo "$g.$a-$v`plusDirName $plus`"
+}
 
 for i in `seq 0 2`
 do
@@ -36,20 +118,31 @@ do
 	if [ -z "$version" ]
 	then
 	    # try to find newest version
-	    bundlePath=`find $gaDir -name "*-bundle.zip" | sort -r | head -n 1`
-	else
-	    a=`echo $ga | cut -f 2 -d ':'`
-	    bundlePath="$gaDir/$version/$a-$version-bundle.zip"
+	    version=$(basename `ls -d $gaDir/[1-9]* | sort -r | head -n 1`)
 	fi
+
+	if [ -z "$version" ]
+	then
+	    # no version found -> no bundle to extract
+	    continue
+	fi
+
+	a=`echo $ga | cut -f 2 -d ':'`
+	bundlePath="$gaDir/$version/$a-$version-bundle.zip"
 
 	if [ -e "$bundlePath" ]
 	then
+	    dir=$(toDir `echo ${ga[i]} | sed -e "s/:/ /g"` "$version" "$plusMod")
+	    dir=`realpath $dir`
 	    echo -n "Extracting `basename $bundlePath` ... "
-	    ( unzip -o "$bundlePath" >/dev/null && echo "done" ) || \
-		( 
-		    echo "Could not extract $bundlePath! Continue with other bundles? (y/n)"
-		    read answer
-		    [ "$answer" != "y" ] && exit 1
-		)
+	    ( unzip -o "$bundlePath" -d "$dir" >/dev/null && \
+		# this should only be one directory, GAV
+		tweak $dir/nexus*
+	    ) || \
+	    ( 
+		echo "Could not extract $bundlePath! Continue with other bundles? (y/n)"
+		read answer
+		[ "$answer" != "y" ] && exit 1
+	    )
 	fi
 done

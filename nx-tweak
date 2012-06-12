@@ -1,0 +1,60 @@
+#!/bin/bash
+
+patchWebXml() {
+cd "$1"
+
+cat <<EOF | patch -p0 
++++ nexus/WEB-INF/web.xml.orig	2011-06-17 09:50:19.077758022 +0200
++++ nexus/WEB-INF/web.xml	2011-06-17 09:50:33.077758022 +0200
+@@ -146,6 +146,7 @@
+     Uncomment this if you need to edit JavaScript files and other
+     resources while Jetty is running (to prevent it from locking
+     everything). 
++  -->
+     <servlet>
+       <servlet-name>default</servlet-name>
+       <servlet-class>org.mortbay.jetty.servlet.DefaultServlet</servlet-class>
+@@ -154,5 +155,4 @@
+         <param-value>false</param-value>
+       </init-param>
+     </servlet>
+-  -->
+ </web-app>
+EOF
+sed -i -e "s@org.mortbay.jetty.servlet.DefaultServlet@org.eclipse.jetty.servlet.DefaultServlet@" "nexus/WEB-INF/web.xml"
+}
+
+beautifyJs() {
+    installDir="$1"
+    jsPath=$installDir/nexus/js/sonatype-all.js
+    [ -x "`which jsbeautifier.py`" ] && jsbeautifier.py $jsPath >$jsPath.formatted
+    mv $jsPath.formatted $jsPath 
+}
+
+enableJavaDebugging() {
+sed -i -e "s/#wrapper.java.additional/wrapper.java.additional/" -e "s/suspend=y,address=8000/suspend=n,address=8001/" "$1/bin/jsw/conf/wrapper.conf"
+}
+
+logLevel() {
+    level="$1"
+    installDir="$2"
+
+    loggingJar="`find $2 -name "nexus-logging-extras-*jar" -print0 | xargs -0 realpath`"
+
+    mkdir -p "$installDir/../sonatype-work/nexus/conf"
+    cd "$installDir/../sonatype-work/nexus/conf"
+    jar xf "$loggingJar" META-INF/log/logback.properties
+    mv META-INF/log/logback.properties .
+    rmdir META-INF/log
+    rmdir META-INF
+    sed -i -e "s/root.level=.*/root.level=$level/" logback.properties
+}
+
+tweak() {
+    ( beautifyJs "$@" )
+    ( patchWebXml "$@" ) 
+    ( enableJavaDebugging "$@" ) 
+    ( logLevel DEBUG "$@" ) 
+}
+
+tweak "$@"

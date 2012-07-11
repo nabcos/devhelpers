@@ -1,0 +1,18 @@
+#!/bin/sh
+
+if [ -z "$NO_HEADER_CHECK" ]
+then
+cat <<EOM
+Checking license headers, use
+ export NO_HEADER_CHECK=true
+to turn off.
+EOM
+else
+cat <<EOM
+Not checking license headers, use
+ unset NO_HEADER_CHECK
+to turn on again.
+EOM
+fi
+
+[ ! -z "$NO_HEADER_CHECK" ] || exec $HOME/local/bin/checkLicense.sh

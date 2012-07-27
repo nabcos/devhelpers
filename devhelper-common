@@ -2,6 +2,13 @@ set -e
 
 REMOTE=upstream
 NEXUS=http://localhost:8081/nexus
+BROWSER=firefox
+
+if [ ! -z "$DH_DEBUG" ]
+then
+    echo -e "DEBUG MODE! Turn off with\n unset DH_DEBUG"
+    set -x
+fi
 
 test -r $HOME/.devhelper && . $HOME/.devhelper
 

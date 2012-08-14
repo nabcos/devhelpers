@@ -30,6 +30,13 @@ if curl -# "$NEXUS/service/local/artifact/maven/redirect?r=$r&g=$g&a=$a&c=bundle
 then
     echo "Extracting bundle..."
     unzip -q -o "$tmp" $opts
+
+    if [ "$TWEAK_ON_GET" == "true" ]
+    then
+	echo "Tweaking bundle..."
+	nx-tweak $dir/$a*
+    fi
+
     exit
 fi
 

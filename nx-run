@@ -1,0 +1,44 @@
+#!/bin/bash
+
+### Run Nexus.
+### nx-run $nexusDir $execParams
+### $execParams are the parameters used to call the Nexus start script. They default to 'console'.
+
+# for old nexus bundles without all-in-one start script
+ARCH=linux-x86-32
+
+. `dirname $0`/devhelper-common
+
+nexus () {
+    p="$1" 
+    shift
+
+    (
+	cd $p
+	if [ -x bin/nexus ]
+	then
+	    echo "running $p/bin/nexus $@"
+	    ./bin/jsw/$ARCH/nexus "$@"
+	elif [ -x bin/jsw/$ARCH/nexus ]
+	then
+	    echo "running $p/bin/jsw/$ARCH/nexus $@"
+	    ./bin/jsw/$ARCH/nexus "$@"
+	fi
+    )
+}
+
+path=$1
+
+if [ -z "$path" ]
+then
+    path="."
+fi
+
+shift
+
+if [ $# -eq 0 ]
+then
+    nexus $path console
+else
+    nexus $path "$@"
+fi

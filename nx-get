@@ -37,6 +37,12 @@ then
 	nx-tweak $dir/$a*
     fi
 
+    if [ "$START_ON_GET" == "true" ]
+    then
+	echo "Starting bundle..."
+	exec nx-run $dir/$a*
+    fi
+
     exit
 fi
 

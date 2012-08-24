@@ -1,0 +1,137 @@
+#!/bin/bash
+
+### install / uninstall nexus plugins
+
+# dir of this script
+SOURCE="${BASH_SOURCE[0]}"
+DIR="$( dirname "$SOURCE" )"
+while [ -h "$SOURCE" ]
+do
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+  DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd )"
+done
+DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+
+# load common
+. $DIR/devhelper-common
+
+# functions
+function plugDir() {
+  local type="$1"
+  local type=${type:=optional-plugins}
+  # bundle >= 2.0
+  local d="./nexus/WEB-INF/$type"
+  if [ ! -d $d ]; then
+    # bundle < 2.0
+    d="./runtime/apps/nexus/$type" 
+  fi
+  if [ ! -d $d ]; then
+    # war >= 2.0
+    d="./WEB-INF/$type" 
+  fi
+  if [ ! -d $d ]; then
+    # war < 2.0
+    d="./WEB-INF/runtime/apps/nexus/$type" 
+  fi
+  if [ ! -d $d ]; then
+    echo "COULD NOT FIND OPTIONAL PLUGIN DIR in `pwd`" 
+    exit 1
+  fi
+  echo "$d"
+}
+
+# optional plugin dir
+function optDir() {
+  echo "$(plugDir)"
+}
+
+#
+function repoDir() {
+  echo "$(plugDir plugin-repository)"
+}
+
+
+function modPlugins() {
+  p="$1"
+  o="$2"
+  pat="$3"
+  
+  # normalize name pattern for find
+  if [[ "$pat" == "all" || "$pat" == "*" ]]; then
+    pat="*"
+  else
+    pat="*${pat}*"  
+  fi
+  
+  (
+    cd $p
+    local from;
+    if [ "$o" == "i" ]; then
+      from=$(optDir)
+    elif [ "$o" == "u" ]; then
+      from=$(repoDir)
+    fi
+    echo "moving from $from"
+    cd $from
+    local found=1
+    for plugin in `find . -maxdepth 1 -mindepth 1 -type d -name "$pat" -exec basename '{}' \;`; do
+      found=0
+      echo $plugin  
+      mv -n -v $plugin ../
+    done
+    if [ "$found" -eq 1 ]; then
+      echo "NO PLUGIN FOUND TO MOVE";
+    fi
+  )
+}
+
+#defaults
+path="."
+op="i"
+pattern="*"
+
+if [[ $# -gt 3 || $1 == "-?" ]]; then
+  echo "install/uninstall nexus plugins"
+  echo ""
+  echo "Usage: nx-plug <app-dir> <op> <pattern>"
+  echo ""
+  echo "Install all optional plugins"
+  echo "  nx-plug"
+  echo "Install all optional plugins with plugin dir name matching *foo*"
+  echo "  nx-plug foo"
+  echo "Uninstall all plugins in plugin-repository"
+  echo "  nx-plug u"
+  echo "Using alias all, uninstall all plugins"
+  echo "  nx-plug u all" 
+  exit 1
+elif [ $# -eq 3 ]; then
+  pattern="$3"
+  op="$2"
+  path="$1"
+elif [ $# -eq 2 ]; then
+  pattern="$2"
+  op="$1"
+elif [ $# -eq 1 ]; then
+  if [[ "$1" == "u" || "$1" == "i" ]]; then  
+    op="$1"
+  else
+    patern="$1"
+  fi
+fi
+
+if [[ "$op" != "i" && "$op" != "u" ]]; then
+  echo "Operation must be 'i' (install) or 'u' uninstall - was $op";
+  exit 1;
+fi
+  
+if [[ "$pattern" == "all" ]]; then
+  pattern="*"
+fi
+
+if [ ! -d "$path" ]; then
+  echo "Path must be a dir: $path";
+  exit 1;
+fi
+
+modPlugins "$path" "$op" "$pattern"

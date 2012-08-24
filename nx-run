@@ -7,9 +7,22 @@
 # for old nexus bundles without all-in-one start script
 ARCH=linux-x86-32
 
-. `dirname $0`/devhelper-common
+# dir of this script
+SOURCE="${BASH_SOURCE[0]}"
+DIR="$( dirname "$SOURCE" )"
+while [ -h "$SOURCE" ]
+do
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+  DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd )"
+done
+DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
-nexus () {
+# load common
+. $DIR/devhelper-common
+
+
+function nexus() {
     p="$1" 
     shift
 
@@ -27,18 +40,18 @@ nexus () {
     )
 }
 
-path=$1
+path="$1"
+nxcmd="$2"
 
-if [ -z "$path" ]
+if [ -z "$nxcmd" ]
 then
+    nxcmd="$1"
     path="."
 fi
 
-shift
-
-if [ $# -eq 0 ]
+if [ -z "$nxcmd" ]
 then
-    nexus $path console
-else
-    nexus $path "$@"
+    nxcmd="console"
 fi
+
+nexus $path $nxcmd

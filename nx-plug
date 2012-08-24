@@ -67,17 +67,20 @@ function modPlugins() {
   (
     cd $p
     local from;
+    local to;
     if [ "$o" == "i" ]; then
       from=$(optDir)
+      to="../plugin-repository"
     elif [ "$o" == "u" ]; then
       from=$(repoDir)
+      to="../optional-plugins"
     fi
     echo "moving from $from"
     cd $from
     local found=1
     for plugin in `find . -maxdepth 1 -mindepth 1 -type d -name "$pat" -exec basename '{}' \;`; do
       found=0  
-      mv -n -v $plugin ../
+      mv -n -v $plugin $to
     done
     if [ "$found" -eq 1 ]; then
       echo "NO PLUGIN FOUND TO MOVE";

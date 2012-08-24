@@ -76,8 +76,7 @@ function modPlugins() {
     cd $from
     local found=1
     for plugin in `find . -maxdepth 1 -mindepth 1 -type d -name "$pat" -exec basename '{}' \;`; do
-      found=0
-      echo $plugin  
+      found=0  
       mv -n -v $plugin ../
     done
     if [ "$found" -eq 1 ]; then

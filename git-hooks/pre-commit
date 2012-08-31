@@ -1,5 +1,10 @@
 #!/bin/sh
 
+if [ ! -e pom.xml ]
+then
+    return
+fi
+
 if [ -z "$NO_HEADER_CHECK" ]
 then
 cat <<EOM

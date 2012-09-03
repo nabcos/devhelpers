@@ -25,9 +25,9 @@ then
 	    if [ "$check" = "y" ]
 	    then
 		mvn license:format -N
-		if missingHeaders
+		if ! missingHeaders
 		then
-		    return 1
+		    return 0
 		fi
 	    fi
 	else

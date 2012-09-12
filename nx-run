@@ -46,7 +46,11 @@ nxcmd="$2"
 if [ -z "$nxcmd" ]
 then
     # if first arg is a path, use that path as nexus basedir and run default (console)
-    if [ -d "$path" ]
+    if [ "$#" -eq 0 ]
+    then
+	path="."
+	nxcmd="console"
+    elif [ -d "$path" ]
     then
 	nxcmd=console
     else

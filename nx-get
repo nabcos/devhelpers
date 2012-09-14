@@ -47,6 +47,10 @@ then
   bundle_url=$(getLatestLocation "$bundle_url")
   file=$(parseFileName $bundle_url)
   dir=${file%.*}
+  if [ -d $dir ]; then
+    echo "You already have the LATEST in this directory: $dir"
+    exit 1
+  fi
   mkdir -p "$dir"
   opts="-d $dir"
 fi

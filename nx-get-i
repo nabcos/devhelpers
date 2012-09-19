@@ -46,6 +46,8 @@ function aliasKey(){
     result="win64"
   elif [[ "$key" == "l" || "$key" == "linux" || "$key" == "u" || "$key" == "unix" || "$key" == "nix" ]]; then
     result="unix"
+  elif [[ "$key" == "tar" || "$key" == "t" || "$key" == "gz" || "$key" == "g" || "$key" == "gzip" ]]; then
+    result="gz" # implies tar.gz bundle instead of zip  
   fi
   echo $result  
 }
@@ -87,6 +89,8 @@ function getVersion(){
     local aKey="$(aliasKey "$one")"
     if isInstaller "$aKey"; then
       result="LATEST"
+    elif [[ "$aKey" == "gz" ]]; then
+      result="LATEST"
     else
       result="$one";
     fi
@@ -120,7 +124,9 @@ function getExtension(){
   elif [[ "$key" == "win32" || "$key" == "win64" ]]; then
     result="exe"  
   elif [[ "$key" == "unix" ]]; then
-    result="sh"  
+    result="sh"
+  elif [[ "$key" == "gz" ]]; then
+    result="tar.gz"
   elif [[ "$c" == "bundle" ]]; then 
     result="zip"
   fi

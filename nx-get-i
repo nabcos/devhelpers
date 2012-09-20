@@ -5,9 +5,7 @@ set -e
 #
 # TODO
 # - add usage examples
-# - add war support
 # - add platform detection
-# - integrate jar defaulting earlier
 
 # dir of this script
 SOURCE="${BASH_SOURCE[0]}"
@@ -85,8 +83,10 @@ function getArtifactId(){
     elif [[ "$g" == "org.sonatype.nexus" ]]; then  
       result="nexus-webapp"
     fi
+  elif [[ "$key" == "jar" ]]; then
+    result="nexus-webapp"
   elif [[ "$g" == "org.sonatype.nexus" ]]; then
-      result="nexus"
+    result="nexus"
   fi
   echo $result  
 }
@@ -113,9 +113,12 @@ function getVersion(){
 
 # interpret the classifier to use to fetch nexus
 function getClassifier(){
-  local key="$1"
+  local ce="$1"
+  local key="$2"
   local result="bundle"
-  if isInstaller "$key"; then
+  if [[ "$ce" != "" ]]; then
+    result="$ce"
+  elif isInstaller "$key"; then
     result="$key"
   elif [[ "$key" == "war" || "$key" == "jar" ]]; then
     result=""
@@ -165,7 +168,7 @@ function isLastBuildSuccessful() {
 
 # get the resolved location of the LATEST artifact
 function getLatestLocation(){
-  local latest_url=$1
+  local latest_url="$1"
   local direct_url=`curl "$latest_url" --max-redirs 0 --netrc-optional -o /dev/null -w '%{redirect_url}' -s -S`
   echo $direct_url
 }
@@ -187,7 +190,7 @@ g="$(getGroupId "$g" "$key")"
 r="$(getRepo "$g")"
 a="$(getArtifactId "$a" "$g" "$key")"
 v="$(getVersion "$v" "$1")"
-c="$(getClassifier "$key")"
+c="$(getClassifier "$c" "$key")"
 e="$(getExtension "$key" "$c")"
 
 # support for simple gav on cmd line
@@ -219,18 +222,25 @@ if [[ "$v" == "LATEST" ]]; then
 fi
 
 service_url="$NEXUS/service/local/artifact/maven/redirect?r=$r&g=$g&a=$a&c=$c&e=$e&v=$v"
-direct_url=$(getLatestLocation "$service_url")
+direct_url=$(getLatestLocation $service_url)
 direct_filename=$(parseFileName $direct_url)
 extract_dir=${direct_filename%.*}
 
+# did we find it?
+if [[ "${direct_url:0:4}" != "http"  ]]; then
+  echo "Problem getting redirect url from:"
+  echo "$service_url"
+  exit 1
+fi
+
 # download protection
 if [[ "$e" == "zip" ]];then
-  if [ -d $extract_dir ]; then
+  if [ -d "$extract_dir" ]; then
     echo "You already have $dir"
     exit 1
   fi
   extract_opts="-d $extract_dir"  
-elif [ -e ${direct_filename} ]; then 
+elif [ -e "${direct_filename}" ]; then 
   echo "You already have ${direct_filename}"
   exit 1
 fi
@@ -262,13 +272,6 @@ then
   exit
 fi
 
-echo "Downloading jar file..."
-# fall back to default main artifact
-if curl -# "$NEXUS/service/local/artifact/maven/redirect?r=$r&g=$g&a=$a&e=jar&v=$v" -f --netrc-optional -L -o "$tmp"
-then
-  mv "$tmp" "$dir/$a-$v.jar"
-  exit
-fi
-
-echo >&2 "Could not find GAV $g:$a:$v"
+# huh?
+echo >&2 "Could not find artifact"
 exit 1

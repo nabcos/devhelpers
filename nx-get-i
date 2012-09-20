@@ -47,7 +47,11 @@ function aliasKey(){
   elif [[ "$key" == "l" || "$key" == "linux" || "$key" == "u" || "$key" == "unix" || "$key" == "nix" ]]; then
     result="unix"
   elif [[ "$key" == "tar" || "$key" == "t" || "$key" == "gz" || "$key" == "g" || "$key" == "gzip" ]]; then
-    result="gz" # implies tar.gz bundle instead of zip  
+    result="gz" # implies tar.gz bundle instead of zip 
+  elif [[ "$key" == "war" || "$key" == "w" ]]; then
+    result="war"
+  elif [[ "$key" == "jar" || "$key" == "j" ]]; then
+    result="jar"
   fi
   echo $result  
 }
@@ -72,27 +76,36 @@ function getArtifactId(){
   local key="$3"
   local result="nexus-professional";
   if [ ! "$a" == "" ]; then
-    result="$a"
+    result="$a" # explicit artifact id
   elif isInstaller "${key}"; then
-    result="nexus-pro-trial-installer"
-  elif [ "$a" == "" ] && [ "$g" == "org.sonatype.nexus" ]; then
-    result="nexus"
+    result="nexus-pro-trial-installer" # there is only one installer id
+  elif [[ "$key" == "war" ]]; then
+    if [[ "$g" == "com.sonatype.nexus" ]]; then
+      result="nexus"
+    elif [[ "$g" == "org.sonatype.nexus" ]]; then  
+      result="nexus-webapp"
+    fi
+  elif [[ "$g" == "org.sonatype.nexus" ]]; then
+      result="nexus"
   fi
   echo $result  
 }
 
 # interpret the version to use to fetch nexus
 function getVersion(){
-  local one="$1"
+  local ve="$1"
+  local two="$2"
   local result="LATEST"
-  if [ ! "$one" == "" ]; then
-    local aKey="$(aliasKey "$one")"
+  if [[ "$ve" != "" ]]; then
+    result="$ve"
+  elif [ ! "$two" == "" ]; then
+    local aKey="$(aliasKey "$two")"
     if isInstaller "$aKey"; then
       result="LATEST"
-    elif [[ "$aKey" == "gz" ]]; then
+    elif [[ "$aKey" == "gz" || "$aKey" == "war" || "$aKey" == "jar" ]]; then
       result="LATEST"
     else
-      result="$one";
+      result="$two";
     fi
   fi   
   echo "$result"  
@@ -101,7 +114,13 @@ function getVersion(){
 # interpret the classifier to use to fetch nexus
 function getClassifier(){
   local key="$1"
-  (isInstaller ${key} && echo "$key") || echo "bundle";  
+  local result="bundle"
+  if isInstaller "$key"; then
+    result="$key"
+  elif [[ "$key" == "war" || "$key" == "jar" ]]; then
+    result=""
+  fi
+  echo $result  
 }
 
 # what repo should I ask
@@ -127,6 +146,8 @@ function getExtension(){
     result="sh"
   elif [[ "$key" == "gz" ]]; then
     result="tar.gz"
+  elif [[ "$key" == "war" ]]; then
+    result="war"
   elif [[ "$c" == "bundle" ]]; then 
     result="zip"
   fi
@@ -165,7 +186,7 @@ key="$(aliasKey "$1" "$2")"
 g="$(getGroupId "$g" "$key")"
 r="$(getRepo "$g")"
 a="$(getArtifactId "$a" "$g" "$key")"
-v="$(getVersion "$1")"
+v="$(getVersion "$v" "$1")"
 c="$(getClassifier "$key")"
 e="$(getExtension "$key" "$c")"
 

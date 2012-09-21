@@ -39,7 +39,7 @@ logLevel() {
     level="$1"
     installDir="$2"
 
-    loggingJar="`find $2 -name "nexus-logging-extras-*jar" -print0 | xargs -0 realpath`"
+    loggingJar="`find $2 -path "*/WEB-INF/*" -name "nexus-logging-extras-*jar" -print0 | xargs -0 realpath`"
 
     mkdir -p "$installDir/../sonatype-work/nexus/conf"
     cd "$installDir/../sonatype-work/nexus/conf"

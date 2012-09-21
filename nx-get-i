@@ -1,0 +1,277 @@
+#!/bin/bash
+
+set -e
+
+#
+# TODO
+# - add usage examples
+# - add platform detection
+
+# dir of this script
+SOURCE="${BASH_SOURCE[0]}"
+DIR="$( dirname "$SOURCE" )"
+while [ -h "$SOURCE" ]
+do
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+  DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd )"
+done
+DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+
+# load common
+. $DIR/devhelper-common
+
+######### functions
+
+# based on a classifier key, indicate if this implies installer artifact
+function isInstaller(){
+  local key="$1"
+  [[ "$key" == "macos" ||"$key" == "win32" || "$key" == "win64" || "$key" == "unix" ]] 
+}
+
+# user friendly alias matching for classifier argument
+function aliasKey(){
+  local key="$2" 
+  if [ "$2" = "" ]; then
+    key=$1
+  fi
+  local result="$key";
+  if [[ "$key" == "macos" || "$key" == "mac" || "$key" == "osx" || "$key" == "m" || "$key" == "macosx" ]]; then
+    result="macos" 
+  elif [[ "$key" == "win32" || "$key" == "win" || "$key" == "w" ]]; then
+    result="win32"  
+  elif [[ "$key" == "win64" || "$key" == "w64" ]]; then
+    result="win64"
+  elif [[ "$key" == "l" || "$key" == "linux" || "$key" == "u" || "$key" == "unix" || "$key" == "nix" ]]; then
+    result="unix"
+  elif [[ "$key" == "tar" || "$key" == "t" || "$key" == "gz" || "$key" == "g" || "$key" == "gzip" ]]; then
+    result="gz" # implies tar.gz bundle instead of zip 
+  elif [[ "$key" == "war" || "$key" == "w" ]]; then
+    result="war"
+  elif [[ "$key" == "jar" || "$key" == "j" ]]; then
+    result="jar"
+  fi
+  echo $result  
+}
+
+# magic group id
+function getGroupId(){
+  local g="$1"
+  local key="$2"
+  local result="com.sonatype.nexus"
+  if [ ! "$g" == "" ]; then
+    result="$g"  
+  elif isInstaller "${key}"; then
+    result="$result"  
+  fi
+  echo "$result"   
+}
+
+# magic artifact id
+function getArtifactId(){
+  local a="$1"
+  local g="$2"
+  local key="$3"
+  local result="nexus-professional";
+  if [ ! "$a" == "" ]; then
+    result="$a" # explicit artifact id
+  elif isInstaller "${key}"; then
+    result="nexus-pro-trial-installer" # there is only one installer id
+  elif [[ "$key" == "war" ]]; then
+    if [[ "$g" == "com.sonatype.nexus" ]]; then
+      result="nexus"
+    elif [[ "$g" == "org.sonatype.nexus" ]]; then  
+      result="nexus-webapp"
+    fi
+  elif [[ "$key" == "jar" ]]; then
+    result="nexus-webapp"
+  elif [[ "$g" == "org.sonatype.nexus" ]]; then
+    result="nexus"
+  fi
+  echo $result  
+}
+
+# interpret the version to use to fetch nexus
+function getVersion(){
+  local ve="$1"
+  local two="$2"
+  local result="LATEST"
+  if [[ "$ve" != "" ]]; then
+    result="$ve"
+  elif [ ! "$two" == "" ]; then
+    local aKey="$(aliasKey "$two")"
+    if isInstaller "$aKey"; then
+      result="LATEST"
+    elif [[ "$aKey" == "gz" || "$aKey" == "war" || "$aKey" == "jar" ]]; then
+      result="LATEST"
+    else
+      result="$two";
+    fi
+  fi   
+  echo "$result"  
+}
+
+# interpret the classifier to use to fetch nexus
+function getClassifier(){
+  local ce="$1"
+  local key="$2"
+  local result="bundle"
+  if [[ "$ce" != "" ]]; then
+    result="$ce"
+  elif isInstaller "$key"; then
+    result="$key"
+  elif [[ "$key" == "war" || "$key" == "jar" ]]; then
+    result=""
+  fi
+  echo $result  
+}
+
+# what repo should I ask
+function getRepo(){
+  local g="$1"
+  local result="sonatype-grid";
+  if [ "$g" == "org.sonatype.nexus" ]; then
+    result="sonatype-public-grid"
+  fi
+  echo "$result"  
+}
+
+# artifact extension
+function getExtension(){
+  local key=$1
+  local c=$2
+  local result="jar";
+  if [[ "$key" == "macos" ]]; then
+    result="dmg"  
+  elif [[ "$key" == "win32" || "$key" == "win64" ]]; then
+    result="exe"  
+  elif [[ "$key" == "unix" ]]; then
+    result="sh"
+  elif [[ "$key" == "gz" ]]; then
+    result="tar.gz"
+  elif [[ "$key" == "war" ]]; then
+    result="war"
+  elif [[ "$c" == "bundle" ]]; then 
+    result="zip"
+  fi
+  echo $result  
+}
+
+function isLastBuildSuccessful() {
+  local g="$1"
+  local p="nexus-bundles"
+  if [[ "$g" == "org.sonatype.nexus" ]]; then
+    p="nexus-oss"
+  fi
+  curl "https://builds.sonatype.org/rest/projects/$p" -s -f -L --netrc-optional -H "Accept: application/json" | egrep '"result":"SUCCESS"' > /dev/null
+}
+
+# get the resolved location of the LATEST artifact
+function getLatestLocation(){
+  local latest_url="$1"
+  local direct_url=`curl "$latest_url" --max-redirs 0 --netrc-optional -o /dev/null -w '%{redirect_url}' -s -S`
+  echo $direct_url
+}
+
+# get the artifact file name from the url
+function parseFileName(){
+  local url=$1
+  echo ${url##*/}
+}
+
+# $1 is the version if not a recognized alias
+# $2 is an alias key that determines the artifact
+
+# the key attempts to be a shortcut alias identifier for an artifact
+key="$(aliasKey "$1" "$2")"
+
+# resolve all artifact information 
+g="$(getGroupId "$g" "$key")"
+r="$(getRepo "$g")"
+a="$(getArtifactId "$a" "$g" "$key")"
+v="$(getVersion "$v" "$1")"
+c="$(getClassifier "$c" "$key")"
+e="$(getExtension "$key" "$c")"
+
+# support for simple gav on cmd line
+if [[ ${v} == *:* ]]
+then
+    v=`echo $v | sed -e "s/:/ /g"`
+read g a v <<EOF
+$v
+EOF
+fi
+
+# debug
+echo "g $g"
+echo "a $a"
+echo "r $r"
+echo "v $v"
+echo "c $c"
+echo "e $e"
+
+# build status check
+if [[ "$v" == "LATEST" ]]; then
+  # get latest build status, report it if not stable
+  if ! isLastBuildSuccessful ${g}; then
+    echo "###############################"
+    echo "LATEST BUILD WAS NOT SUCCESSFUL"
+    echo "###############################"
+    exit 1
+  fi
+fi
+
+service_url="$NEXUS/service/local/artifact/maven/redirect?r=$r&g=$g&a=$a&c=$c&e=$e&v=$v"
+direct_url=$(getLatestLocation $service_url)
+direct_filename=$(parseFileName $direct_url)
+extract_dir=${direct_filename%.*}
+
+# did we find it?
+if [[ "${direct_url:0:4}" != "http"  ]]; then
+  echo "Problem getting redirect url from:"
+  echo "$service_url"
+  exit 1
+fi
+
+# download protection
+if [[ "$e" == "zip" ]];then
+  if [ -d "$extract_dir" ]; then
+    echo "You already have $dir"
+    exit 1
+  fi
+  extract_opts="-d $extract_dir"  
+elif [ -e "${direct_filename}" ]; then 
+  echo "You already have ${direct_filename}"
+  exit 1
+fi
+
+# download
+echo "${direct_url}"
+if curl -# "$direct_url" -f --netrc-optional -L -o "$tmp"
+then
+  if [ "$e" == "zip" ]; then  
+    echo "Extracting ..."
+    mkdir -p "$extract_dir"
+    unzip -q -o "$tmp" $extract_opts
+  
+    if [ "$TWEAK_ON_GET" == "true" ]
+    then
+      echo "Tweaking ..."
+      nx-tweak $extract_dir/$a*
+    fi
+
+    if [ "$START_ON_GET" == "true" ]
+    then
+      echo "Starting ..."
+      exec nx-run $extract_dir/$a*
+    fi
+  else
+    mv "$tmp" "${direct_filename}"
+    echo ${direct_filename}
+  fi
+  exit
+fi
+
+# huh?
+echo >&2 "Could not find artifact"
+exit 1

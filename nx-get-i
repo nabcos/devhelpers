@@ -246,6 +246,8 @@ elif [ -e "${direct_filename}" ]; then
 fi
 
 # download
+tmp=`tmpfile`
+
 echo "${direct_url}"
 if curl -# "$direct_url" -f --netrc-optional -L -o "$tmp"
 then

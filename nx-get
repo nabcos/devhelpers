@@ -31,8 +31,6 @@ function parseFileName(){
 }
 
 
-# $tmp is handled by devhelper-common
-
 if [ "$USE_GAV_DIR" = "true" ]
 then
   dir="$g.$a-$v-remote"
@@ -55,6 +53,7 @@ then
   opts="-d $dir"
 fi
 
+tmp=`tmpfile`
 
 echo "Downloading bundle..."
 if curl -# "$bundle_url" -f --netrc-optional -L -o "$tmp" 

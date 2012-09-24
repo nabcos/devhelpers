@@ -13,7 +13,10 @@ fi
 test -r $HOME/.devhelper && . $HOME/.devhelper
 
 cleanup() {
-    rm -f "$tmp"
+    if ! [ -z "$tmpdir" ]
+    then
+	rm -rf "$tmpdir"
+    fi
 }
 
 remote() {
@@ -52,5 +55,12 @@ local_repo() {
     fi
 }
 
+tmpfile() {
+    if [ -z "$tmpdir" ]
+    then
+	tmpdir="`mktemp -d -t devhelper.XXXXXXXXXX`"
+    fi
+    mktemp -p "$tmpdir" -t devhelper.XXXXXXXXXX
+}
+
 trap cleanup EXIT INT
-tmp=`mktemp -t devhelper.XXXXXXXXXX`

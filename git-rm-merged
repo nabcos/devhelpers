@@ -6,6 +6,8 @@ git remote update $REMOTE
 
 branch_name=`current_branch`
 
+tmp=`tmpfile`
+
 git branch --merged $REMOTE/$branch_name | grep -v "* $branch_name" >"$tmp"
 
 while read branch

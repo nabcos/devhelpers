@@ -32,7 +32,7 @@ beautifyJs() {
 }
 
 enableJavaDebugging() {
-sed -i -e "s/#wrapper.java.additional/wrapper.java.additional/" -e "s/suspend=y,address=8000/suspend=n,address=8001/" "$1/bin/jsw/conf/wrapper.conf"
+    sed -i -e "s/#wrapper.java.additional.\([0-9]*=-\)/wrapper.java.additional.\1/" -e "s/suspend=y,address=8000/suspend=n,address=8001/" "$1/bin/jsw/conf/wrapper.conf"
 }
 
 logLevel() {

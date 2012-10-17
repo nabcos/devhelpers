@@ -1,8 +1,10 @@
 #!/bin/sh
 
-. devhelper-common
+. `dirname $0`/devhelper-common
 
 branch_name=`current_branch`
+
+tmp=`tmpfile`
 
 git branch -a --merged $REMOTE/$branch_name | grep -v "* $branch_name" | grep -v "$REMOTE/$branch_name" >"$tmp"
 

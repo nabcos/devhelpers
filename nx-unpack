@@ -11,9 +11,7 @@ set -e
 
 . `dirname $0`/devhelper-common
 
-ga[0]=org.sonatype.nexus:nexus-oss-webapp
-ga[1]=com.sonatype.nexus:nexus
-ga[2]=com.sonatype.nexus:nexus-professional
+ga=( com.sonatype.nexus:nexus-professional com.sonatype.nexus:nexus-professional-bundle-template com.sonatype.nexus:nexus org.sonatype.nexus:nexus-oss-webapp )
 
 localRepo=`local_repo "$@"`
 

@@ -9,7 +9,7 @@ set -e
 # If it is '+suffix', use 'suffix' as branch identifier (e.g. /tmp/mvnrepo/suffix).
 # If the suffix starts with '/', use that as a full path to the repo (e.g. '+/tmp/repo' will search for nexus bundles in /tmp/repo)
 
-. `dirname $0`/devhelper-common
+. $BASEDIR/devhelper-common
 
 ga=( com.sonatype.nexus:nexus-professional com.sonatype.nexus:nexus-professional-bundle-template com.sonatype.nexus:nexus org.sonatype.nexus:nexus-oss-webapp )
 
@@ -27,7 +27,7 @@ then
 fi
 
 tweak() {
-    nx-tweak "$@"
+    nx tweak "$@"
 }
 
 plusDirName() {

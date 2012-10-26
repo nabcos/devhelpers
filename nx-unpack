@@ -52,7 +52,7 @@ toDir() {
     echo "$g.$a-$v`plusDirName $plus`"
 }
 
-for i in `seq 0 2`
+for i in `seq 0 3`
 do
 	gaDir="$localRepo/`echo ${ga[i]} | sed -e "s@[.:]@/@g"`"
 

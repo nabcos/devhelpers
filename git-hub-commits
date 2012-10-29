@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# dir of this script
+SOURCE="${BASH_SOURCE[0]}"
+BASEDIR="$( dirname "$SOURCE" )"
+
+while [ -h "$SOURCE" ]
+do
+    SOURCE="$(readlink "$SOURCE")"
+    [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+    BASEDIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd )"
+done
+
+BASEDIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+
+. "$BASEDIR/devhelper-common"
+
+gitUrl=`pushUrl`
+
+if ! (echo "$gitUrl" | grep -q 'git@github.com')
+then
+    echo >&2 "URL does not point to github: '$gitUrl'"
+    exit 1
+fi
+
+# git@github.com:sonatype/nexus-enterprise.git
+# https://github.com/sonatype/nexus-enterprise/pull/new/$branch
+url=$(echo "$gitUrl" | sed -e "s#git@github.com:\(.*\)\?#https://github.com/\1#" -e "s/\.git$//" )
+if [ -z "$1" ]
+then
+    url="$url/commits"
+else
+    url="$url/commit/$1"
+fi
+
+$BROWSER "$url" 

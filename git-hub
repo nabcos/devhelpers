@@ -1,0 +1,30 @@
+#!/bin/bash
+
+set -e
+
+# dir of this script
+SOURCE="${BASH_SOURCE[0]}"
+BASEDIR="$( dirname "$SOURCE" )"
+
+while [ -h "$SOURCE" ]
+do
+    SOURCE="$(readlink "$SOURCE")"
+    [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+    BASEDIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd )"
+done
+
+
+BASEDIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+
+
+name="$1"
+shift
+
+export BASEDIR
+
+if [ -x $DIR/git-hub-$name ]
+then
+    exec /bin/bash $EXEC_OPTS $DIR/git-hub-$name "$@"
+else
+    exec /bin/bash $EXEC_OPTS git-hub-$name "$@"
+fi

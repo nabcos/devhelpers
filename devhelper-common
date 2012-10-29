@@ -20,6 +20,13 @@ cleanup() {
 }
 
 remote() {
+    repos=`git remote 2>/dev/null|| echo skip ` # if git remote fails, this is not a git repo
+    if [ "$repos" = skip ] 
+    then
+	echo >&2 "This is not a git repo, 'git remote' failed"
+	return 1
+    fi
+
     if echo "$repos" | grep "$REMOTE" -q
     then
 	repo="$REMOTE"
@@ -28,7 +35,7 @@ remote() {
 	repo="origin"
     else
 	echo >&2 "unknown or empty remotes: '$repos'"
-	exit 1
+	return 1
     fi
 
     echo "$repo"
@@ -61,6 +68,32 @@ tmpfile() {
 	tmpdir="`mktemp -d -t devhelper.XXXXXXXXXX`"
     fi
     mktemp -p "$tmpdir" -t devhelper.XXXXXXXXXX
+}
+
+pushUrl() {
+    remoteName="$1"
+    if [ -z "$remoteName" ]
+    then
+	remoteName=`remote`
+	if [ $? -ne 0 ]
+	then
+	    echo >&2 "No git remote found"
+	    return 1
+	fi
+    fi
+
+    gitUrl=$(git remote show -n $remoteName | grep "Push  URL:" | cut -d ":" -f 2- | tr -d '[[:space:]]' )
+
+    echo $gitUrl
+}
+
+function ghRepoUrl {
+    if ! (echo "$gitUrl" | grep -q 'git@github.com')
+    then
+	echo >&2 "URL does not point to github: '$gitUrl'"
+	exit 1
+    fi
+    echo "$1" | sed -e "s#git@github.com:\(.*\)\?#https://github.com/\1#" -e "s/\.git$//"
 }
 
 trap cleanup EXIT INT

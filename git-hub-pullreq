@@ -2,13 +2,6 @@
 
 . "`dirname $0`/devhelper-common"
 
-repos=`git remote 2>/dev/null|| echo skip ` # if git remote fails, this is not a git repo
-if [ "$repos" = skip ] 
-then
-    echo >&2 "This is not a git repo, 'git remote' failed"
-    exit 1
-fi
-
 remoteName="$1"
 if [ -z "$remoteName" ]
 then

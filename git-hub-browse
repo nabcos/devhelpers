@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# dir of this script
+SOURCE="${BASH_SOURCE[0]}"
+BASEDIR="$( dirname "$SOURCE" )"
+
+while [ -h "$SOURCE" ]
+do
+    SOURCE="$(readlink "$SOURCE")"
+    [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+    BASEDIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd )"
+done
+
+BASEDIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+
+. "$BASEDIR/devhelper-common"
+
+gitUrl=`pushUrl`
+
+url=`ghRepoUrl "$gitUrl"`
+
+url="$url/tree/`current_branch`"
+
+repoPath() {
+    path="$1"
+    if [ -z "$path" ]
+    then
+        path="."
+    fi
+
+    path=`realpath "$path"`
+
+    if [ -f "$path" ]
+    then
+	relativePath="`basename $path`"
+	path="`dirname $path`"
+    fi
+
+    (
+    	cd "$path"
+	while [ ! -d ".git" ]
+	do
+	    relativePath="`basename "$path"`/$relativePath"
+	    cd ..
+	    path=`pwd`
+	done
+
+	echo "$relativePath"
+    )
+}
+
+url="$url/`repoPath $1`"
+
+
+$BROWSER "$url" 

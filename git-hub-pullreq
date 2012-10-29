@@ -1,18 +1,5 @@
 #!/bin/bash
 
-# dir of this script
-SOURCE="${BASH_SOURCE[0]}"
-BASEDIR="$( dirname "$SOURCE" )"
-
-while [ -h "$SOURCE" ]
-do
-    SOURCE="$(readlink "$SOURCE")"
-    [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
-    BASEDIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd )"
-done
-
-BASEDIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-
 . "$BASEDIR/devhelper-common"
 
 remoteName="$1"

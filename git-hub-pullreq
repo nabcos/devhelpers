@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. "`dirname $0`/devhelper-common"
+. "$BASEDIR/devhelper-common"
 
 remoteName="$1"
 if [ -z "$remoteName" ]

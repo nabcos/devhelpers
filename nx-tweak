@@ -4,10 +4,25 @@ set -e
 
 . $BASEDIR/devhelper-common
 
+webdev() {
+if [ -z "$WEBAPP_DEV" ] || [ -z "$WEBAPP_DEV_JS_PATH" ] || [ ! -d "$WEBAPP_DEV_JS_PATH" ]
+then
+    echo -e "To symlink javascript files to the dev directory, set WEBAPP_DEV_JS_PATH and use\n  export WEBAPP_DEV=1"
+    return
+fi
+
+
+## restlet cannot handle file symlinks, so we have to nuke sonatype-all.js (don't want to copy that into dev dir...)
+cd "$1/nexus"
+echo "Creating symlink from '$WEBAPP_DEV_JS_PATH' to `realpath js`..."
+rm -rf js
+ln -s "$WEBAPP_DEV_JS_PATH" .
+}
+
 patchWebXml() {
 cd "$1"
 
-cat <<EOF | patch -p0 
+cat <<EOF | ( patch -p0 || echo "patch not applied" )
 +++ nexus/WEB-INF/web.xml.orig	2011-06-17 09:50:19.077758022 +0200
 +++ nexus/WEB-INF/web.xml	2011-06-17 09:50:33.077758022 +0200
 @@ -146,6 +146,7 @@
@@ -58,6 +73,7 @@ tweak() {
     ( patchWebXml "$@" ) 
     ( enableJavaDebugging "$@" ) 
     ( logLevel DEBUG "$@" ) 
+    ( webdev "$@" )
 }
 
 tweak "$@"

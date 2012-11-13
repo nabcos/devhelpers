@@ -23,6 +23,20 @@ function nexus() {
 	then
 	    echo "running $p/bin/jsw/$ARCH/nexus $@"
 	    ./bin/jsw/$ARCH/nexus "$@"
+	else
+	    while read lsEntry
+	    do
+		if [ -d "$lsEntry" ] && [[ "$lsEntry" = nexus-* ]]
+		then
+		    nexusDir="$lsEntry"
+		    break
+		fi
+	    done < <(ls)
+
+	    if [ ! -z "$nexusDir" ]
+	    then
+		nexus "$nexusDir" "$@"
+	    fi
 	fi
     )
 }

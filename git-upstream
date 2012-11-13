@@ -11,9 +11,9 @@ do
     BASEDIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd )"
 done
 
-
 BASEDIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
+. "$BASEDIR/devhelper-common"
 
 TEMP=`getopt -o oa --long offline,all \
          -n 'upstream' -- "$@"`

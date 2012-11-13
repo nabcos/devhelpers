@@ -2,7 +2,7 @@
 
 set -e
 
-. `dirname $0`/devhelper-common
+. $BASEDIR/devhelper-common
 
 g=com.sonatype.nexus
 a=nexus-professional
@@ -64,13 +64,13 @@ then
     if [ "$TWEAK_ON_GET" == "true" ]
     then
 	echo "Tweaking bundle..."
-	nx-tweak $dir/$a*
+	nx tweak $dir/$a*
     fi
 
     if [ "$START_ON_GET" == "true" ]
     then
 	echo "Starting bundle..."
-	exec nx-run $dir/$a*
+	exec nx run $dir/$a*
     fi
 
     exit

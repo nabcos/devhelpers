@@ -7,20 +7,7 @@
 # for old nexus bundles without all-in-one start script
 ARCH=linux-x86-32
 
-# dir of this script
-SOURCE="${BASH_SOURCE[0]}"
-DIR="$( dirname "$SOURCE" )"
-while [ -h "$SOURCE" ]
-do
-  SOURCE="$(readlink "$SOURCE")"
-  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
-  DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd )"
-done
-DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-
-# load common
-. $DIR/devhelper-common
-
+. $BASEDIR/devhelper-common
 
 function nexus() {
     p="$1" 
@@ -36,6 +23,20 @@ function nexus() {
 	then
 	    echo "running $p/bin/jsw/$ARCH/nexus $@"
 	    ./bin/jsw/$ARCH/nexus "$@"
+	else
+	    while read lsEntry
+	    do
+		if [ -d "$lsEntry" ] && [[ "$lsEntry" = nexus-* ]]
+		then
+		    nexusDir="$lsEntry"
+		    break
+		fi
+	    done < <(ls)
+
+	    if [ ! -z "$nexusDir" ]
+	    then
+		nexus "$nexusDir" "$@"
+	    fi
 	fi
     )
 }

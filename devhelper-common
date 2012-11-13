@@ -4,6 +4,8 @@ REMOTE=upstream
 NEXUS=http://localhost:8081/nexus
 BROWSER=firefox
 
+export DH_TMPDIR=""
+
 if [ ! -z "$DH_DEBUG" ]
 then
     echo -e "DEBUG MODE! Turn off with\n unset DH_DEBUG"
@@ -13,9 +15,9 @@ fi
 test -r $HOME/.devhelper && . $HOME/.devhelper
 
 cleanup() {
-    if ! [ -z "$tmpdir" ]
+    if ! [ -z "$DH_TMPDIR" ]
     then
-	rm -rf "$tmpdir"
+	rm -rf "$DH_TMPDIR"
     fi
 }
 
@@ -62,12 +64,42 @@ local_repo() {
     fi
 }
 
-tmpfile() {
-    if [ -z "$tmpdir" ]
+tmpdir() {
+    if [ -z "$DH_TMPDIR" ]
     then
-	tmpdir="`mktemp -d -t devhelper.XXXXXXXXXX`"
+	DH_TMPDIR="`mktemp -d -t devhelper.XXXXXXXXXX`"
     fi
-    mktemp -p "$tmpdir" -t devhelper.XXXXXXXXXX
+    echo "$DH_TMPDIR"
+}
+
+tmpfile() {
+    mktemp -p `tmpdir` -t devhelper.XXXXXXXXXX
+}
+
+pushUrl() {
+    remoteName="$1"
+    if [ -z "$remoteName" ]
+    then
+	remoteName=`remote`
+	if [ $? -ne 0 ]
+	then
+	    echo >&2 "No git remote found"
+	    return 1
+	fi
+    fi
+
+    gitUrl=$(git remote show -n $remoteName | grep "Push  URL:" | cut -d ":" -f 2- | tr -d '[[:space:]]' )
+
+    echo $gitUrl
+}
+
+function ghRepoUrl {
+    if ! (echo "$gitUrl" | grep -q 'git@github.com')
+    then
+	echo >&2 "URL does not point to github: '$gitUrl'"
+	exit 1
+    fi
+    echo "$1" | sed -e "s#git@github.com:\(.*\)\?#https://github.com/\1#" -e "s/\.git$//"
 }
 
 pushUrl() {

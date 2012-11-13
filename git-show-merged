@@ -1,6 +1,19 @@
-#!/bin/sh
+#!/bin/bash
 
-. `dirname $0`/devhelper-common
+# dir of this script
+SOURCE="${BASH_SOURCE[0]}"
+BASEDIR="$( dirname "$SOURCE" )"
+
+while [ -h "$SOURCE" ]
+do
+    SOURCE="$(readlink "$SOURCE")"
+    [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+    BASEDIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd )"
+done
+
+BASEDIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+
+. "$BASEDIR/devhelper-common"
 
 branch_name=`current_branch`
 

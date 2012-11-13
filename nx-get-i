@@ -7,19 +7,7 @@ set -e
 # - add usage examples
 # - add platform detection
 
-# dir of this script
-SOURCE="${BASH_SOURCE[0]}"
-DIR="$( dirname "$SOURCE" )"
-while [ -h "$SOURCE" ]
-do
-  SOURCE="$(readlink "$SOURCE")"
-  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
-  DIR="$( cd -P "$( dirname "$SOURCE"  )" && pwd )"
-done
-DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
-
-# load common
-. $DIR/devhelper-common
+. $BASEDIR/devhelper-common
 
 ######### functions
 
@@ -259,13 +247,13 @@ then
     if [ "$TWEAK_ON_GET" == "true" ]
     then
       echo "Tweaking ..."
-      nx-tweak $extract_dir/$a*
+      nx tweak $extract_dir/$a*
     fi
 
     if [ "$START_ON_GET" == "true" ]
     then
       echo "Starting ..."
-      exec nx-run $extract_dir/$a*
+      exec nx run $extract_dir/$a*
     fi
   else
     mv "$tmp" "${direct_filename}"

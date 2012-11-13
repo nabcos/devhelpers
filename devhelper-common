@@ -4,7 +4,7 @@ REMOTE=upstream
 NEXUS=http://localhost:8081/nexus
 BROWSER=firefox
 
-export DH_DH_TMPDIR=""
+export DH_TMPDIR=""
 
 if [ ! -z "$DH_DEBUG" ]
 then

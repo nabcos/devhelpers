@@ -6,7 +6,15 @@ gitUrl=`pushUrl`
 
 url=`ghRepoUrl "$gitUrl"`
 
-url="$url/tree/`current_branch`"
+if [ $# -eq 2 ]
+then
+    branch="$1"
+    shift
+else
+    branch=`current_branch`
+fi
+
+url="$url/tree/$branch"
 
 repoPath() {
     path="$1"

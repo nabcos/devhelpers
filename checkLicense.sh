@@ -12,7 +12,7 @@ missingHeaders() {
     return $?
 }
 
-if egrep -qs '<groupId>com.mycila.maven-license-plugin</groupId>' pom.xml && egrep -qs '<artifactId>maven-license-plugin</artifactId>' pom.xml
+if [ -f header.txt ]
 then
     if missingHeaders
     then

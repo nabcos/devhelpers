@@ -1,0 +1,8 @@
+#!/bin/bash
+
+### Open Nexus IT report in a browser that can display it ( Chrome can't )
+### ! Only supports OSX atm !
+
+. $BASEDIR/devhelper-common
+
+open -a "Safari.app" ./target/it-reports/index.xml

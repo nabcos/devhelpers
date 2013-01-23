@@ -14,32 +14,32 @@ set -e
 # based on a classifier key, indicate if this implies installer artifact
 function isInstaller(){
   local key="$1"
-  [[ "$key" == "macos" ||"$key" == "win32" || "$key" == "win64" || "$key" == "unix" ]] 
+  [[ "$key" == "macos" ||"$key" == "win32" || "$key" == "win64" || "$key" == "unix" ]]
 }
 
 # user friendly alias matching for classifier argument
 function aliasKey(){
-  local key="$2" 
+  local key="$2"
   if [ "$2" = "" ]; then
     key=$1
   fi
   local result="$key";
-  if [[ "$key" == "macos" || "$key" == "mac" || "$key" == "osx" || "$key" == "m" || "$key" == "macosx" ]]; then
-    result="macos" 
+  if [[ "$key" == "macos" || "$key" == "mac" || "$key" == "osx" || "$key" == "m" || "$key" == "macosx" || "$key" == "dmg" ]]; then
+    result="macos"
   elif [[ "$key" == "win32" || "$key" == "win" || "$key" == "w" ]]; then
-    result="win32"  
+    result="win32"
   elif [[ "$key" == "win64" || "$key" == "w64" ]]; then
     result="win64"
   elif [[ "$key" == "l" || "$key" == "linux" || "$key" == "u" || "$key" == "unix" || "$key" == "nix" ]]; then
     result="unix"
   elif [[ "$key" == "tar" || "$key" == "t" || "$key" == "gz" || "$key" == "g" || "$key" == "gzip" ]]; then
-    result="gz" # implies tar.gz bundle instead of zip 
+    result="gz" # implies tar.gz bundle instead of zip
   elif [[ "$key" == "war" || "$key" == "w" ]]; then
     result="war"
   elif [[ "$key" == "jar" || "$key" == "j" ]]; then
     result="jar"
   fi
-  echo $result  
+  echo $result
 }
 
 # magic group id
@@ -48,11 +48,11 @@ function getGroupId(){
   local key="$2"
   local result="com.sonatype.nexus"
   if [ ! "$g" == "" ]; then
-    result="$g"  
+    result="$g"
   elif isInstaller "${key}"; then
-    result="$result"  
+    result="$result"
   fi
-  echo "$result"   
+  echo "$result"
 }
 
 # magic artifact id
@@ -68,7 +68,7 @@ function getArtifactId(){
   elif [[ "$key" == "war" ]]; then
     if [[ "$g" == "com.sonatype.nexus" ]]; then
       result="nexus"
-    elif [[ "$g" == "org.sonatype.nexus" ]]; then  
+    elif [[ "$g" == "org.sonatype.nexus" ]]; then
       result="nexus-webapp"
     fi
   elif [[ "$key" == "jar" ]]; then
@@ -76,7 +76,7 @@ function getArtifactId(){
   elif [[ "$g" == "org.sonatype.nexus" ]]; then
     result="nexus"
   fi
-  echo $result  
+  echo $result
 }
 
 # interpret the version to use to fetch nexus
@@ -86,7 +86,7 @@ function getVersion(){
   local result="LATEST"
   if [[ "$ve" != "" ]]; then
     result="$ve"
-  elif [ ! "$two" == "" ]; then
+  elif [[ "$two" != "" ]]; then
     local aKey="$(aliasKey "$two")"
     if isInstaller "$aKey"; then
       result="LATEST"
@@ -95,8 +95,8 @@ function getVersion(){
     else
       result="$two";
     fi
-  fi   
-  echo "$result"  
+  fi
+  echo "$result"
 }
 
 # interpret the classifier to use to fetch nexus
@@ -111,41 +111,45 @@ function getClassifier(){
   elif [[ "$key" == "war" || "$key" == "jar" ]]; then
     result=""
   fi
-  echo $result  
+  echo $result
 }
 
 # what repo should I ask
 function getRepo(){
-  local g="$1"
+  local ge="$1"
   local result="sonatype-grid";
-  if [ "$g" == "org.sonatype.nexus" ]; then
+  if [[ "$ge" == "org.sonatype.nexus" ]]; then
     result="sonatype-public-grid"
   fi
-  echo "$result"  
+  echo "$result"
 }
 
 # artifact extension
 function getExtension(){
-  local key=$1
-  local c=$2
+  local e=$1
+  local key=$2
+  local c=$3
   local result="jar";
-  if [[ "$key" == "macos" ]]; then
-    result="dmg"  
+  if [[ "$e" != "" ]]; then
+    result="$e"
+  elif [[ "$key" == "macos" ]]; then
+    result="dmg"
   elif [[ "$key" == "win32" || "$key" == "win64" ]]; then
-    result="exe"  
+    result="exe"
   elif [[ "$key" == "unix" ]]; then
     result="sh"
-  elif [[ "$key" == "gz" ]]; then
+  elif [[ "$key" == "gz" || "$key" == "tar.gz" ]]; then
     result="tar.gz"
   elif [[ "$key" == "war" ]]; then
     result="war"
-  elif [[ "$c" == "bundle" ]]; then 
+  elif [[ "$c" == "bundle" ]]; then
     result="zip"
   fi
-  echo $result  
+  echo $result
 }
 
 function isLastBuildSuccessful() {
+  # fixme make work with BAMBOO
   local g="$1"
   local p="nexus-bundles"
   if [[ "$g" == "org.sonatype.nexus" ]]; then
@@ -173,13 +177,13 @@ function parseFileName(){
 # the key attempts to be a shortcut alias identifier for an artifact
 key="$(aliasKey "$1" "$2")"
 
-# resolve all artifact information 
+# resolve all artifact information
 g="$(getGroupId "$g" "$key")"
 r="$(getRepo "$g")"
 a="$(getArtifactId "$a" "$g" "$key")"
 v="$(getVersion "$v" "$1")"
 c="$(getClassifier "$c" "$key")"
-e="$(getExtension "$key" "$c")"
+e="$(getExtension "$e" "$key" "$c")"
 
 # support for simple gav on cmd line
 if [[ ${v} == *:* ]]
@@ -222,13 +226,13 @@ if [[ "${direct_url:0:4}" != "http"  ]]; then
 fi
 
 # download protection
-if [[ "$e" == "zip" ]];then
+if [[ "$e" == "zip" && "$extract" == "" ]];then
   if [ -d "$extract_dir" ]; then
     echo "You already have $dir"
     exit 1
   fi
-  extract_opts="-d $extract_dir"  
-elif [ -e "${direct_filename}" ]; then 
+  extract_opts="-d $extract_dir"
+elif [ -e "${direct_filename}" ]; then
   echo "You already have ${direct_filename}"
   exit 1
 fi
@@ -239,11 +243,11 @@ tmp=`tmpfile`
 echo "${direct_url}"
 if curl -# "$direct_url" -f --netrc-optional -L -o "$tmp"
 then
-  if [ "$e" == "zip" ]; then  
+  if [[ "$e" == "zip" && "$extract" == "" ]]; then
     echo "Extracting ..."
     mkdir -p "$extract_dir"
     unzip -q -o "$tmp" $extract_opts
-  
+
     if [ "$TWEAK_ON_GET" == "true" ]
     then
       echo "Tweaking ..."

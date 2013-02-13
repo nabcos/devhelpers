@@ -5,6 +5,11 @@ set -e
 . $BASEDIR/devhelper-common
 
 webdev() {
+if [ "$2" = "webdev" ]
+then
+    WEBAPP_DEV=1
+fi
+
 if [ -z "$WEBAPP_DEV" ] || [ -z "$WEBAPP_DEV_JS_PATH" ] || [ ! -d "$WEBAPP_DEV_JS_PATH" ]
 then
     echo -e "To symlink javascript files to the dev directory, set WEBAPP_DEV_JS_PATH and use\n  export WEBAPP_DEV=1"
@@ -53,6 +58,11 @@ enableJavaDebugging() {
     sed -i -e "s/#wrapper.java.additional.\([0-9]*=-\)/wrapper.java.additional.\1/" -e "s/suspend=y,address=8000/suspend=n,address=8001/" "$1/bin/jsw/conf/wrapper.conf"
 }
 
+restartOnHUP() {
+    echo "wrapper.signal.mode.hup=RESTART" >>"$1/bin/jsw/conf/wrapper.conf"
+    echo "wrapper.successful_invocation_time=30" >>"$1/bin/jsw/conf/wrapper.conf"
+}
+
 logLevel() {
     level="$1"
     installDir="$2"
@@ -74,6 +84,7 @@ tweak() {
     ( enableJavaDebugging "$@" ) 
     ( logLevel DEBUG "$@" ) 
     ( webdev "$@" )
+    ( restartOnHUP "$@" )
 }
 
 tweak "$@"

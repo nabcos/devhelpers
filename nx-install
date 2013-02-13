@@ -1,0 +1,54 @@
+#!/bin/bash
+
+set -e
+
+. $BASEDIR/devhelper-common
+
+r=${REPO-public}
+
+PWD=`pwd`
+
+if [ "$#" -eq 0 ]
+then
+    cat >&2 <<EOF
+USAGE: nx install \$G:\$A[:\$V] [$TARGET_DIR]
+
+This will unpack the plugin. 
+If TARGET_DIR is not specified, it will try to use ./nexus/WEB-INF/plugin-repository or unpack into the current directory.
+If TARGET_DIR is specified, it will try to use \$TARGET_DIR/nexus/WEB-INF/plugin-repository or unpack into the given directory.
+EOF
+    exit
+elif [ "$#" -eq 2 ]
+then
+    PWD="$2"
+fi
+
+PREPO="$PWD/nexus/WEB-INF/plugin-repository"
+
+gav=`echo $1 | sed -e "s/:/ /g"`
+read g a v <<EOF
+$gav
+EOF
+
+if [ -z "$v" ]
+then
+    v=LATEST
+fi
+
+bundle_url="$NEXUS/service/local/artifact/maven/redirect?r=$r&g=$g&a=$a&c=bundle&e=zip&v=$v"
+
+tmp=`tmpfile`
+
+echo "Downloading plugin..."
+if curl -# "$bundle_url" -f --netrc-optional -L -o "$tmp" 
+then
+    echo "Extracting plugin..."
+
+    if [ -e "$PREPO" ]
+    then
+	rm -rf "$PREPO/$a"*
+	unzip -q -o "$tmp" -d "$PREPO"
+    else
+	unzip -q -o "$tmp"
+    fi
+fi

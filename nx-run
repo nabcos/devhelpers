@@ -18,7 +18,7 @@ function nexus() {
 	if [ -x bin/nexus ]
 	then
 	    echo "running $p/bin/nexus $@"
-	    ./bin/jsw/$ARCH/nexus "$@"
+	    ./bin/nexus "$@"
 	elif [ -x bin/jsw/$ARCH/nexus ]
 	then
 	    echo "running $p/bin/jsw/$ARCH/nexus $@"

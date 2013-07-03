@@ -51,6 +51,8 @@ function getGroupId(){
     result="$g"
   elif isInstaller "${key}"; then
     result="$result"
+  elif [[ "$key" == "war" ]]; then
+    result="org.sonatype.nexus"
   fi
   echo "$result"
 }
@@ -148,15 +150,15 @@ function getExtension(){
   echo $result
 }
 
-function isLastBuildSuccessful() {
+#function isLastBuildSuccessful() {
   # fixme make work with BAMBOO
-  local g="$1"
-  local p="nexus-bundles"
-  if [[ "$g" == "org.sonatype.nexus" ]]; then
-    p="nexus-oss"
-  fi
-  curl "https://builds.sonatype.org/rest/projects/$p" -s -f -L --netrc-optional -H "Accept: application/json" | egrep '"result":"SUCCESS"' > /dev/null
-}
+  #local g="$1"
+  #local p="nexus-bundles"
+  #if [[ "$g" == "org.sonatype.nexus" ]]; then
+  #  p="nexus-oss"
+  #fi
+  #curl "https://builds.sonatype.org/rest/projects/$p" -s -f -L --netrc-optional -H "Accept: application/json" | egrep '"result":"SUCCESS"' > /dev/null
+#}
 
 # get the resolved location of the LATEST artifact
 function getLatestLocation(){
@@ -203,17 +205,18 @@ echo "c $c"
 echo "e $e"
 
 # build status check
-if [[ "$v" == "LATEST" ]]; then
+#if [[ "$v" == "LATEST" ]]; then
   # get latest build status, report it if not stable
-  if ! isLastBuildSuccessful ${g}; then
-    echo "###############################"
-    echo "LATEST BUILD WAS NOT SUCCESSFUL"
-    echo "###############################"
-    exit 1
-  fi
-fi
+  #if ! isLastBuildSuccessful ${g}; then
+  #  echo "###############################"
+  #  echo "LATEST BUILD WAS NOT SUCCESSFUL"
+  #  echo "###############################"
+  #  exit 1
+  #fi
+#fi
 
 service_url="$NEXUS/service/local/artifact/maven/redirect?r=$r&g=$g&a=$a&c=$c&e=$e&v=$v"
+echo $service_url
 direct_url=$(getLatestLocation $service_url)
 direct_filename=$(parseFileName $direct_url)
 extract_dir=${direct_filename%.*}

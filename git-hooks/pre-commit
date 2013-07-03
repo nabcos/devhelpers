@@ -20,4 +20,4 @@ to turn on again.
 EOM
 fi
 
-[ ! -z "$NO_HEADER_CHECK" ] || exec checkLicense.sh
+[ ! -z "$NO_HEADER_CHECK" ] || exec $HOME/.bin/devhelpers/checkLicense.sh
